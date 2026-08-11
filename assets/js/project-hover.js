@@ -1,0 +1,396 @@
+/*==================================
+ * Project card menu
+ *
+ * Clicking (or focusing) a .project-card dims the page and grows a curved
+ * arc out of the card edge; the card's links ride along the arc as buttons,
+ * and a project figure floats alongside if the card declares one.
+ *
+ * Click rather than hover, because the arc lives outside the card: on hover
+ * the cursor has to cross dead space to reach a button, and any wobble on
+ * the way dismisses the thing you were reaching for.
+ *
+ * Progressive enhancement:
+ *   - nothing runs without a fine pointer and a >=992px viewport, so touch
+ *     devices keep the plain inline-button cards.
+ *   - the real <a> elements in .project-links stay in the DOM (visually
+ *     hidden once enhanced) so they remain focusable and crawlable. The arc
+ *     buttons are decorative mirrors: aria-hidden, tabindex -1.
+ *   - figures are fetched on first open, never on page load.
+ *
+ * Only opacity / transform / stroke-dashoffset are animated.
+==================================== */
+
+(function () {
+    'use strict';
+
+    if (!window.matchMedia) return;
+
+    var grids = document.querySelectorAll('.projects-grid');
+    if (!grids.length) return;
+
+    var hoverMQ = window.matchMedia('(hover: hover) and (pointer: fine)');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Re-evaluated rather than checked once, so a window that starts narrow
+    // (or a device that gains a mouse) still picks the enhancement up.
+    function enabled() {
+        return hoverMQ.matches && window.innerWidth >= 992;
+    }
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+
+    // Arc geometry. Stems fan away from the card edge, each one a little
+    // longer than the last, so the labels stack without colliding.
+    var BASE_ANGLE = -8;    // degrees from horizontal for the nearest stem
+    var ANGLE_STEP = -24;   // each further stem swings this much more
+    var BASE_RADIUS = 122;
+    var RADIUS_STEP = 24;
+    var STEM_STAGGER = 60;  // ms between stems drawing
+    var FIGURE_GAP = 46;
+
+    var overlay = null, backdrop = null, stage = null, svg = null, itemsBox = null;
+    var figure = null, figImg = null;
+    var lightbox = null, lightImg = null, lightPrevFocus = null;
+    var activeCard = null, activeLinks = null;
+    var openScrollY = 0, scrollRaf = null;
+
+    /* ---------- overlay construction (lazy, once) ---------- */
+
+    function buildOverlay() {
+        overlay = document.createElement('div');
+        overlay.id = 'project-hover';
+        overlay.setAttribute('aria-hidden', 'true');
+
+        backdrop = document.createElement('div');
+        backdrop.className = 'ph-backdrop';
+
+        svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('class', 'ph-spine');
+        svg.setAttribute('preserveAspectRatio', 'none');
+
+        itemsBox = document.createElement('div');
+        itemsBox.className = 'ph-items';
+
+        figure = document.createElement('div');
+        figure.className = 'ph-figure';
+        figImg = document.createElement('img');
+        figImg.alt = '';
+        figImg.decoding = 'async';
+        figure.appendChild(figImg);
+
+        // Everything anchored to the card lives in one stage, so following a
+        // scroll is a single transform write rather than a geometry rebuild.
+        stage = document.createElement('div');
+        stage.className = 'ph-stage';
+        stage.appendChild(svg);
+        stage.appendChild(itemsBox);
+        stage.appendChild(figure);
+
+        overlay.appendChild(backdrop);
+        overlay.appendChild(stage);
+        document.body.appendChild(overlay);
+
+        // Clicking the dimmed area dismisses the menu — unless the click
+        // landed on another card underneath, in which case switch to it.
+        backdrop.addEventListener('click', function (e) {
+            var under = document.elementsFromPoint
+                ? document.elementsFromPoint(e.clientX, e.clientY)
+                : [];
+            for (var i = 0; i < under.length; i++) {
+                var card = cardOf(under[i]);
+                if (card && card !== activeCard) { open(card); return; }
+            }
+            close();
+        });
+
+        // The buttons mirror the card's real links; a click is forwarded to
+        // the link itself so target/rel/href behaviour stays in one place.
+        itemsBox.addEventListener('click', function (e) {
+            var item = e.target.closest ? e.target.closest('.ph-item') : null;
+            if (!item || !activeLinks) return;
+            var link = activeLinks[item.dataset.index | 0];
+            if (link) link.click();
+        });
+
+        figure.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (!activeCard) return;
+            var full = activeCard.getAttribute('data-figure-full')
+                    || activeCard.getAttribute('data-figure');
+            if (full) openLightbox(full, activeCard.getAttribute('data-figure-alt'));
+        });
+    }
+
+    /* ---------- geometry ---------- */
+
+    function stemPath(ax, ay, ex, ey, hdir) {
+        // Leave the anchor climbing vertically, arrive at the label flat —
+        // the hand-drawn "J" of the sketch.
+        var c1x = ax + hdir * 16;
+        var c1y = ay + (ey - ay) * 0.62;
+        var c2x = ex - hdir * 84;
+        var c2y = ey;
+        return 'M' + ax + ' ' + ay + ' C' + c1x + ' ' + c1y + ',' + c2x + ' ' + c2y + ',' + ex + ' ' + ey;
+    }
+
+    /* ---------- open / close ---------- */
+
+    function open(card) {
+        if (!enabled()) return;
+        if (activeCard === card) return;
+        if (activeCard) close();
+
+        var links = card.querySelectorAll('.project-links a');
+        if (!links.length) return;
+
+        if (!overlay) buildOverlay();
+
+        activeCard = card;
+        activeLinks = links;
+        card.classList.add('is-active');
+
+        openScrollY = window.pageYOffset;
+        stage.style.transform = '';
+
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var rect = card.getBoundingClientRect();
+
+        svg.setAttribute('viewBox', '0 0 ' + vw + ' ' + vh);
+        svg.setAttribute('width', vw);
+        svg.setAttribute('height', vh);
+
+        var n = links.length;
+        var maxRadius = BASE_RADIUS + (n - 1) * RADIUS_STEP;
+
+        // Flip to the left when the arc would run off the right edge.
+        var hdir = (rect.right + maxRadius + 150 > vw - 24) ? -1 : 1;
+        // Flip downward when the fan would climb out of the top of the screen.
+        var vdir = (rect.top + 34 - maxRadius < 96) ? 1 : -1;
+
+        var ax = hdir === 1 ? rect.right - 6 : rect.left + 6;
+        var ay = vdir === -1 ? rect.top + 34 : rect.bottom - 34;
+
+        // Pass 1: build the buttons so we can measure their widths.
+        itemsBox.innerHTML = '';
+        var buttons = [];
+        var i;
+        for (i = 0; i < n; i++) {
+            var src = links[i];
+            var btn = document.createElement('span');
+            btn.className = 'ph-item ' + src.className;
+            btn.textContent = src.textContent.trim();
+            btn.setAttribute('aria-hidden', 'true');
+            btn.setAttribute('tabindex', '-1');
+            btn.dataset.index = i;
+            itemsBox.appendChild(btn);
+            buttons.push(btn);
+        }
+
+        // Pass 2: place everything. All measurements are read up front so the
+        // positioning writes below cannot thrash layout.
+        var widths = [], heights = [];
+        for (i = 0; i < n; i++) {
+            widths.push(buttons[i].offsetWidth);
+            heights.push(buttons[i].offsetHeight);
+        }
+
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+        var farthestX = ax;
+        for (i = 0; i < n; i++) {
+            var deg = BASE_ANGLE + i * ANGLE_STEP;
+            var rad = (deg * Math.PI) / 180;
+            var r = BASE_RADIUS + i * RADIUS_STEP;
+            var ex = ax + hdir * Math.cos(rad) * r;
+            var ey = ay + vdir * -Math.sin(rad) * r;
+
+            var w = widths[i];
+            var tailX = ex + hdir * (w + 16);
+            if (hdir === 1 ? tailX > farthestX : tailX < farthestX) farthestX = tailX;
+
+            var path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('class', 'ph-stem');
+            path.setAttribute('d', stemPath(ax, ay, ex, ey, hdir) + ' L' + tailX + ' ' + ey);
+            svg.appendChild(path);
+
+            if (!reduce) {
+                var len = path.getTotalLength();
+                path.style.strokeDasharray = len;
+                path.style.strokeDashoffset = len;
+                path.style.transitionDelay = (i * STEM_STAGGER) + 'ms';
+            }
+
+            buttons[i].style.left = (hdir === 1 ? ex + 8 : ex - w - 8) + 'px';
+            buttons[i].style.top = (ey - heights[i] - 5) + 'px';
+            if (!reduce) buttons[i].style.transitionDelay = (140 + i * STEM_STAGGER) + 'ms';
+            buttons[i].style.setProperty('--ph-slide', (hdir * -14) + 'px');
+        }
+
+        // Figure, if the card declares one. Created on demand, so a project
+        // with no artwork costs nothing and no image is fetched until hover.
+        var figSrc = card.getAttribute('data-figure');
+        figure.hidden = true;
+        if (figSrc) {
+            // Prefer the far side of the arc; fall back to the other side of
+            // the card when the arc has run out of room, so the figure never
+            // lands on top of its own buttons.
+            var spaceOut = hdir === 1
+                ? vw - 24 - (farthestX + FIGURE_GAP)
+                : (farthestX - FIGURE_GAP) - 24;
+            var spaceBack = hdir === 1
+                ? rect.left - 24 - FIGURE_GAP
+                : vw - 24 - (rect.right + FIGURE_GAP);
+
+            var figW, figX;
+            if (spaceOut >= 260 || spaceOut >= spaceBack) {
+                figW = Math.min(400, Math.floor(spaceOut));
+                figX = hdir === 1 ? farthestX + FIGURE_GAP : farthestX - FIGURE_GAP - figW;
+            } else {
+                figW = Math.min(400, Math.floor(spaceBack));
+                figX = hdir === 1 ? rect.left - FIGURE_GAP - figW : rect.right + FIGURE_GAP;
+            }
+
+            if (figW >= 220) {
+                if (figImg.getAttribute('src') !== figSrc) {
+                    figImg.setAttribute('src', figSrc);
+                    figImg.alt = card.getAttribute('data-figure-alt') || '';
+                }
+                var half = vh * 0.3; // matches the 60vh max-height in CSS
+                var figY = Math.max(96 + half, Math.min(vh - 24 - half, (rect.top + rect.bottom) / 2));
+
+                figure.style.width = figW + 'px';
+                figure.style.left = figX + 'px';
+                figure.style.top = figY + 'px';
+                figure.hidden = false;
+            }
+        }
+
+        // Commit the start values (dashoffset, opacity) before flipping the
+        // class, otherwise the transitions are skipped. A forced reflow rather
+        // than requestAnimationFrame, which never fires in a background tab.
+        void overlay.offsetWidth;
+        overlay.classList.add('is-open');
+    }
+
+    function close() {
+        if (!activeCard) return;
+        activeCard.classList.remove('is-active');
+        activeCard = null;
+        activeLinks = null;
+        if (overlay) overlay.classList.remove('is-open');
+    }
+
+    /* ---------- lightbox ---------- */
+
+    function openLightbox(src, alt) {
+        if (!lightbox) {
+            lightbox = document.createElement('div');
+            lightbox.className = 'ph-lightbox';
+            lightbox.innerHTML =
+                '<div class="ph-backdrop"></div>' +
+                '<button type="button" class="ph-lightbox-close" aria-label="Close">&times;</button>' +
+                '<img alt="">';
+            document.body.appendChild(lightbox);
+            lightImg = lightbox.querySelector('img');
+            lightbox.addEventListener('click', function (e) {
+                if (e.target === lightImg) return;
+                closeLightbox();
+            });
+        }
+        lightPrevFocus = document.activeElement;
+        if (lightImg.getAttribute('src') !== src) {
+            lightImg.setAttribute('src', src);
+            lightImg.alt = alt || '';
+        }
+        lightbox.classList.add('is-open');
+        document.body.classList.add('ph-locked');
+        lightbox.querySelector('.ph-lightbox-close').focus();
+    }
+
+    function closeLightbox() {
+        if (!lightbox || !lightbox.classList.contains('is-open')) return;
+        lightbox.classList.remove('is-open');
+        document.body.classList.remove('ph-locked');
+        if (lightPrevFocus && lightPrevFocus.focus) lightPrevFocus.focus();
+        lightPrevFocus = null;
+    }
+
+    /* ---------- wiring: one delegated listener set per grid ---------- */
+
+    function cardOf(node) {
+        return node && node.closest ? node.closest('.project-card') : null;
+    }
+
+    function syncEnabled() {
+        var on = enabled();
+        for (var i = 0; i < grids.length; i++) {
+            grids[i].classList.toggle('hover-menu-on', on);
+        }
+        if (!on) close();
+    }
+
+    for (var g = 0; g < grids.length; g++) {
+        (function (grid) {
+            grid.addEventListener('click', function (e) {
+                if (!enabled()) return;
+                // Let a click on one of the (visually hidden) real links run
+                // its own course rather than toggling the panel under it.
+                if (e.target.closest && e.target.closest('.project-links a')) return;
+                var card = cardOf(e.target);
+                if (!card) return;
+                if (card === activeCard) close();
+                else open(card);
+            });
+
+            grid.addEventListener('focusin', function (e) {
+                var card = cardOf(e.target);
+                if (!card) return;
+                open(card);
+                // Mirror the focus ring onto the matching arc button, so the
+                // keyboard user can see where they are on the arc.
+                if (!itemsBox || !activeLinks) return;
+                var items = itemsBox.children;
+                for (var i = 0; i < items.length; i++) {
+                    items[i].classList.toggle('is-focus', activeLinks[i] === e.target);
+                }
+            });
+
+            grid.addEventListener('focusout', function (e) {
+                var card = cardOf(e.target);
+                if (!card) return;
+                if (e.relatedTarget && card.contains(e.relatedTarget)) return;
+                close();
+            });
+
+        })(grids[g]);
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' && e.keyCode !== 27) return;
+        if (lightbox && lightbox.classList.contains('is-open')) { closeLightbox(); return; }
+        if (activeCard) { activeCard.blur(); close(); }
+    });
+
+    // The panel is pinned to viewport coordinates read when it opened. Now
+    // that it is click-opened it should survive a scroll, so the whole stage
+    // rides along on one compositor-only transform instead of being rebuilt.
+    window.addEventListener('scroll', function () {
+        if (!activeCard || scrollRaf) return;
+        scrollRaf = requestAnimationFrame(function () {
+            scrollRaf = null;
+            if (!activeCard) return;
+            stage.style.transform =
+                'translateY(' + (openScrollY - window.pageYOffset) + 'px)';
+        });
+    }, { passive: true });
+
+    window.addEventListener('resize', function () {
+        close();
+        syncEnabled();
+    });
+
+    if (hoverMQ.addEventListener) hoverMQ.addEventListener('change', syncEnabled);
+    else if (hoverMQ.addListener) hoverMQ.addListener(syncEnabled);
+
+    syncEnabled();
+})();

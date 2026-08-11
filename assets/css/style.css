@@ -1037,6 +1037,356 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
     background: #24729E;
 }
 
+.projects-grid .publication-category {
+    margin-top: 20px;
+}
+
+.projects-grid .publication-category:first-child {
+    margin-top: 0;
+}
+
+.projects-cta {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.projects-cta a {
+    display: inline-block;
+    padding: 12px 28px;
+    border: 1px solid #5B9BD5;
+    border-radius: 4px;
+    color: #5B9BD5;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.projects-cta a:hover {
+    background: #5B9BD5;
+    color: #fff;
+}
+
+/*========================
+        PROJECT HOVER MENU
+========================*/
+
+/* Once project-hover.js takes over, the inline links become the accessible
+   source of truth: visually hidden but still focusable and readable by
+   screen readers. The arc buttons are decorative mirrors of them. */
+.projects-grid.hover-menu-on .project-links {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The card is the button that opens the arc, so it says so. */
+.projects-grid.hover-menu-on .project-card {
+    cursor: pointer;
+}
+
+.projects-grid.hover-menu-on .project-card::after {
+    content: "click to see more \2192";
+    display: block;
+    margin-top: 14px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: #B0BFD1;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.projects-grid.hover-menu-on .project-card:hover::after {
+    color: #5B9BD5;
+    transform: translateX(3px);
+}
+
+.projects-grid.hover-menu-on .project-card:hover {
+    transform: translateY(-4px);
+}
+
+.projects-grid.hover-menu-on .project-card.is-active::after {
+    content: "click anywhere to close";
+    color: #C9A227;
+}
+
+.projects-grid.hover-menu-on .project-card.is-active {
+    position: relative;
+    z-index: 10001;
+    transform: translateY(-10px);
+    box-shadow: 0 18px 40px rgba(28, 42, 56, 0.35);
+    border-left-color: #FFC857;
+}
+
+#project-hover {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+#project-hover.is-open {
+    visibility: visible;
+}
+
+.ph-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(28, 42, 56, 0.72);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+@supports ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+    .ph-backdrop {
+        background: rgba(28, 42, 56, 0.55);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+    }
+}
+
+#project-hover.is-open .ph-backdrop {
+    opacity: 1;
+    will-change: opacity;
+    /* Catches the click that dismisses the menu. */
+    pointer-events: auto;
+    cursor: default;
+}
+
+/* Holds everything anchored to the card, so a scroll is one transform. */
+.ph-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.ph-spine {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.ph-stem {
+    fill: none;
+    stroke: #FFC857;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke-dashoffset 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+#project-hover.is-open .ph-stem {
+    stroke-dashoffset: 0 !important;
+}
+
+.ph-items {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Plain labels sitting on their stem, not buttons — the stem tail is the
+   underline. Colours are the site palette lifted for the dark backdrop. */
+.ph-item {
+    position: absolute;
+    display: inline-block;
+    white-space: nowrap;
+    padding: 3px 6px 5px;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+    color: #E8EEF5;
+    text-shadow: 0 1px 8px rgba(16, 26, 36, 0.55);
+    opacity: 0;
+    transform: translateX(var(--ph-slide, -14px));
+    transition: opacity 0.28s ease,
+                transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+                color 0.2s ease;
+}
+
+.ph-item.paper-link { background: none; color: #FFC857; }
+.ph-item.website-link { background: none; color: #8FC4EA; }
+.ph-item.code-link { background: none; color: #D6E4F0; }
+.ph-item.inactive-link { background: none; color: #93A6B8; font-style: italic; }
+
+#project-hover.is-open .ph-item {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+#project-hover.is-open .ph-item:hover,
+#project-hover.is-open .ph-item.inactive-link:hover {
+    color: #fff;
+}
+
+#project-hover.is-open .ph-item.is-focus {
+    color: #fff;
+    outline: 2px solid #FFC857;
+    outline-offset: 2px;
+}
+
+.ph-figure {
+    position: absolute;
+    z-index: 1;
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 18px 44px rgba(28, 42, 56, 0.4);
+    opacity: 0;
+    transform: translateY(-50%) scale(0.96);
+    transition: opacity 0.3s ease 0.1s, transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s;
+    pointer-events: none;
+}
+
+.ph-figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+#project-hover.is-open .ph-figure {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    pointer-events: auto;
+    cursor: zoom-in;
+}
+
+/* Lightbox for the full-resolution figure. */
+.ph-lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10010;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.ph-lightbox.is-open {
+    display: flex;
+}
+
+.ph-lightbox .ph-backdrop {
+    opacity: 1;
+    background: rgba(20, 30, 42, 0.9);
+}
+
+.ph-lightbox img {
+    position: relative;
+    max-width: min(92vw, 1100px);
+    max-height: 92vh;
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.ph-lightbox-close {
+    position: absolute;
+    top: 18px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.ph-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+body.ph-locked {
+    overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ph-stem,
+    .ph-item,
+    .ph-figure,
+    .ph-backdrop {
+        transition-duration: 0.15s;
+        transition-delay: 0s !important;
+    }
+    .ph-item {
+        transform: none;
+    }
+    .ph-figure,
+    #project-hover.is-open .ph-figure {
+        transform: translateY(-50%);
+    }
+    .projects-grid.hover-menu-on .project-card.is-active,
+    .projects-grid.hover-menu-on .project-card:hover {
+        transform: none;
+    }
+    .projects-grid.hover-menu-on .project-card:hover::after {
+        transform: none;
+    }
+}
+
+/* Below the desktop breakpoint the script never initialises; these rules
+   guarantee the plain card survives even if the class is already on. */
+@media screen and (max-width: 991px) {
+    #project-hover,
+    .ph-lightbox {
+        display: none !important;
+    }
+    .projects-grid.hover-menu-on .project-links {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        clip-path: none;
+        white-space: normal;
+    }
+    .projects-grid.hover-menu-on .project-card {
+        cursor: auto;
+    }
+    .projects-grid.hover-menu-on .project-card::after {
+        display: none;
+    }
+}
+
 /*========================
         PUBLICATIONS SECTION
 ========================*/
