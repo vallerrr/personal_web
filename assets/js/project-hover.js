@@ -48,7 +48,7 @@
     var FIGURE_GAP = 46;
 
     var overlay = null, backdrop = null, stage = null, svg = null, itemsBox = null;
-    var figure = null, figImg = null;
+    var panel = null, figure = null, figImg = null, notes = null, notesList = null;
     var lightbox = null, lightImg = null, lightPrevFocus = null;
     var activeCard = null, activeLinks = null;
     var openScrollY = 0, scrollRaf = null;
@@ -70,6 +70,12 @@
         itemsBox = document.createElement('div');
         itemsBox.className = 'ph-items';
 
+        // One column beside the arc, holding the project's artwork and/or its
+        // takeaway notes. They are separate boxes: artwork keeps its white
+        // mount, notes sit as plain text straight on the dimmed page.
+        panel = document.createElement('div');
+        panel.className = 'ph-panel';
+
         figure = document.createElement('div');
         figure.className = 'ph-figure';
         figImg = document.createElement('img');
@@ -77,13 +83,22 @@
         figImg.decoding = 'async';
         figure.appendChild(figImg);
 
+        notes = document.createElement('div');
+        notes.className = 'ph-notes';
+        notes.innerHTML = '<p class="ph-notes-title">Key takeaways</p>'
+                        + '<ol class="ph-notes-list"></ol>';
+        notesList = notes.querySelector('.ph-notes-list');
+
+        panel.appendChild(figure);
+        panel.appendChild(notes);
+
         // Everything anchored to the card lives in one stage, so following a
         // scroll is a single transform write rather than a geometry rebuild.
         stage = document.createElement('div');
         stage.className = 'ph-stage';
         stage.appendChild(svg);
         stage.appendChild(itemsBox);
-        stage.appendChild(figure);
+        stage.appendChild(panel);
 
         overlay.appendChild(backdrop);
         overlay.appendChild(stage);
@@ -111,9 +126,9 @@
             if (link) link.click();
         });
 
-        figure.addEventListener('click', function (e) {
+        panel.addEventListener('click', function (e) {
             e.stopPropagation();
-            if (!activeCard) return;
+            if (!activeCard || !figure.contains(e.target)) return;
             var full = activeCard.getAttribute('data-figure-full')
                     || activeCard.getAttribute('data-figure');
             if (full) openLightbox(full, activeCard.getAttribute('data-figure-alt'));
@@ -138,6 +153,8 @@
         if (!enabled()) return;
         if (activeCard === card) return;
         if (activeCard) close();
+
+        if (card.classList.contains('no-menu')) return;
 
         var links = card.querySelectorAll('.project-links a');
         if (!links.length) return;
@@ -226,11 +243,16 @@
             buttons[i].style.setProperty('--ph-slide', (hdir * -14) + 'px');
         }
 
-        // Figure, if the card declares one. Created on demand, so a project
-        // with no artwork costs nothing and no image is fetched until hover.
+        // The side column: artwork and/or takeaway notes, independently. Images
+        // are fetched on demand, so a project with no artwork costs nothing and
+        // nothing loads until the card opens.
         var figSrc = card.getAttribute('data-figure');
-        figure.hidden = true;
-        if (figSrc) {
+        var takeaways = card.querySelectorAll('.project-takeaways li');
+        var hasNotes = takeaways.length > 0;
+        panel.hidden = true;
+        figure.hidden = !figSrc;
+        notes.hidden = !hasNotes;
+        if (figSrc || hasNotes) {
             // Prefer the far side of the arc; fall back to the other side of
             // the card when the arc has run out of room, so the figure never
             // lands on top of its own buttons.
@@ -241,27 +263,40 @@
                 ? rect.left - 24 - FIGURE_GAP
                 : vw - 24 - (rect.right + FIGURE_GAP);
 
+            var maxW = figSrc ? 400 : 380;
             var figW, figX;
             if (spaceOut >= 260 || spaceOut >= spaceBack) {
-                figW = Math.min(400, Math.floor(spaceOut));
+                figW = Math.min(maxW, Math.floor(spaceOut));
                 figX = hdir === 1 ? farthestX + FIGURE_GAP : farthestX - FIGURE_GAP - figW;
             } else {
-                figW = Math.min(400, Math.floor(spaceBack));
+                figW = Math.min(maxW, Math.floor(spaceBack));
                 figX = hdir === 1 ? rect.left - FIGURE_GAP - figW : rect.right + FIGURE_GAP;
             }
 
             if (figW >= 220) {
-                if (figImg.getAttribute('src') !== figSrc) {
+                if (hasNotes) {
+                    notesList.innerHTML = '';
+                    for (var t = 0; t < takeaways.length; t++) {
+                        var li = document.createElement('li');
+                        li.textContent = takeaways[t].textContent;
+                        notesList.appendChild(li);
+                    }
+                }
+                if (figSrc && figImg.getAttribute('src') !== figSrc) {
                     figImg.setAttribute('src', figSrc);
                     figImg.alt = card.getAttribute('data-figure-alt') || '';
                 }
-                var half = vh * 0.3; // matches the 60vh max-height in CSS
-                var figY = Math.max(96 + half, Math.min(vh - 24 - half, (rect.top + rect.bottom) / 2));
 
-                figure.style.width = figW + 'px';
-                figure.style.left = figX + 'px';
-                figure.style.top = figY + 'px';
-                figure.hidden = false;
+                // Keep the column on screen: half its measured height either
+                // side of the card's midpoint.
+                panel.style.width = figW + 'px';
+                panel.style.left = figX + 'px';
+                panel.style.visibility = 'hidden';
+                panel.hidden = false;
+                var half = Math.min(panel.offsetHeight, vh - 120) / 2;
+                var figY = Math.max(96 + half, Math.min(vh - 24 - half, (rect.top + rect.bottom) / 2));
+                panel.style.top = figY + 'px';
+                panel.style.visibility = '';
             }
         }
 
@@ -319,6 +354,16 @@
 
     function cardOf(node) {
         return node && node.closest ? node.closest('.project-card') : null;
+    }
+
+    // A card whose only link is a placeholder (work in progress, no paper yet)
+    // has nothing to open, so it never becomes a menu and never invites a click.
+    function markStaticCards() {
+        var cards = document.querySelectorAll('.projects-grid .project-card');
+        for (var i = 0; i < cards.length; i++) {
+            var live = cards[i].querySelectorAll('.project-links a:not(.inactive-link)');
+            cards[i].classList.toggle('no-menu', live.length === 0);
+        }
     }
 
     function syncEnabled() {
@@ -392,5 +437,6 @@
     if (hoverMQ.addEventListener) hoverMQ.addEventListener('change', syncEnabled);
     else if (hoverMQ.addListener) hoverMQ.addListener(syncEnabled);
 
+    markStaticCards();
     syncEnabled();
 })();
