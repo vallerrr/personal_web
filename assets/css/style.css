@@ -150,6 +150,35 @@ nav.navbar.bootsnav ul.nav > li.dropdown span {
     font-size: 8px;
     margin-left: 15px;
 }
+/* CV sits in the nav as a distinct action rather than another menu word. */
+nav.navbar.bootsnav ul.nav > li.nav-cv > a,
+.sticky-wrapper.is-sticky nav.navbar.bootsnav ul.nav > li.nav-cv > a {
+    margin: 24px 0 24px 14px;
+    padding: 9px 18px;
+    border: 1px solid #B8D4E0;
+    border-radius: 20px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: #5B9BD5;
+}
+
+nav.navbar.bootsnav ul.nav > li.nav-cv > a:hover,
+nav.navbar.bootsnav ul.nav > li.nav-cv > a:focus,
+.sticky-wrapper.is-sticky nav.navbar.bootsnav ul.nav > li.nav-cv > a:hover,
+.sticky-wrapper.is-sticky nav.navbar.bootsnav ul.nav > li.nav-cv > a:focus {
+    background: #5B9BD5;
+    border-color: #5B9BD5;
+    color: #fff;
+}
+
+@media screen and (max-width: 992px) {
+    nav.navbar.bootsnav ul.nav > li.nav-cv > a,
+    .sticky-wrapper.is-sticky nav.navbar.bootsnav ul.nav > li.nav-cv > a {
+        display: inline-block;
+        margin: 10px 0;
+    }
+}
+
 .sticky-wrapper.is-sticky nav.navbar.bootsnav ul.nav > li > a {color:#4A5568;}
 .sticky-wrapper.is-sticky nav.navbar.bootsnav ul.nav > li > a:hover,.sticky-wrapper.is-sticky nav.navbar.bootsnav ul.nav > li > a:focus,.sticky-wrapper.is-sticky nav.navbar.bootsnav ul.nav > li.active>a{color: #5B9BD5;}
 /*.nav li*/
@@ -955,11 +984,40 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
     margin-top: 40px;
 }
 
+/* Bootstrap 3 floats its columns, so cards ended up as tall as their own
+   text. Grid rather than flex, because grid-auto-rows equalises height
+   across *every* row — flex only matches items on the same line, which
+   left a wrapped fourth card sizing itself. Column count comes from the
+   track size, so both pages stay in step at every width. */
+.projects-grid .row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-auto-rows: 1fr;
+    gap: 30px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* The clearfix pseudo-elements would otherwise become stray grid items. */
+.projects-grid .row::before,
+.projects-grid .row::after {
+    display: none;
+}
+
+/* Bootstrap's widths, floats and gutters are all handled by the grid now. */
+.projects-grid .row > [class*="col-"] {
+    width: auto;
+    padding-left: 0;
+    padding-right: 0;
+    float: none;
+}
+
 .project-card {
+    width: 100%;
+    margin-bottom: 0;
     background: #fff;
     border-radius: 8px;
     padding: 30px;
-    margin-bottom: 30px;
     box-shadow: 0 4px 12px rgba(184, 212, 224, 0.15);
     border-left: 4px solid #5B9BD5;
     transition: all 0.3s ease;
@@ -1074,7 +1132,9 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
 /* Once project-hover.js takes over, the inline links become the accessible
    source of truth: visually hidden but still focusable and readable by
    screen readers. The arc buttons are decorative mirrors of them. */
-.projects-grid.hover-menu-on .project-links {
+/* .no-menu cards keep their label inline — there is no arc to move it to. */
+.projects-grid.hover-menu-on .project-card:not(.no-menu) .project-links,
+.projects-grid.hover-menu-on .project-takeaways {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1085,6 +1145,15 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
     clip-path: inset(50%);
     white-space: nowrap;
     border: 0;
+}
+
+/* Takeaways read as a plain list until the panel takes them over. */
+.project-takeaways {
+    margin: 0 0 20px;
+    padding-left: 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #7A8FA3;
 }
 
 /* The card is the button that opens the arc, so it says so. */
@@ -1115,6 +1184,21 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
 .projects-grid.hover-menu-on .project-card.is-active::after {
     content: "click anywhere to close";
     color: #C9A227;
+}
+
+/* Nothing to open yet, so no invitation to click. */
+.projects-grid.hover-menu-on .project-card.no-menu {
+    cursor: auto;
+}
+
+.projects-grid.hover-menu-on .project-card.no-menu::after {
+    display: none;
+}
+
+.projects-grid.hover-menu-on .project-card.no-menu:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(184, 212, 224, 0.15);
+    border-left-color: #5B9BD5;
 }
 
 .projects-grid.hover-menu-on .project-card.is-active {
@@ -1253,17 +1337,31 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
     outline-offset: 2px;
 }
 
-.ph-figure {
+/* The column beside the arc. Artwork keeps a white mount; notes do not. */
+.ph-panel {
     position: absolute;
     z-index: 1;
-    padding: 8px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 18px 44px rgba(28, 42, 56, 0.4);
     opacity: 0;
     transform: translateY(-50%) scale(0.96);
     transition: opacity 0.3s ease 0.1s, transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s;
     pointer-events: none;
+}
+
+.ph-panel[hidden] {
+    display: none;
+}
+
+.ph-figure {
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 18px 44px rgba(28, 42, 56, 0.4);
+}
+
+/* An attribute alone would lose to the display rule on the image below. */
+.ph-figure[hidden],
+.ph-notes[hidden] {
+    display: none;
 }
 
 .ph-figure img {
@@ -1275,11 +1373,64 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
     border-radius: 4px;
 }
 
-#project-hover.is-open .ph-figure {
+#project-hover.is-open .ph-panel {
     opacity: 1;
     transform: translateY(-50%) scale(1);
     pointer-events: auto;
+}
+
+#project-hover.is-open .ph-figure {
     cursor: zoom-in;
+}
+
+/* Takeaways sit straight on the dimmed page, like the arc labels — no mount,
+   no card, just light text. */
+.ph-notes {
+    color: #E8EEF5;
+    text-shadow: 0 1px 8px rgba(16, 26, 36, 0.55);
+    cursor: default;
+}
+
+.ph-figure + .ph-notes:not([hidden]) {
+    margin-top: 18px;
+}
+
+.ph-notes-title {
+    margin: 0 0 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #FFC857;
+}
+
+.ph-notes-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: ph-note;
+}
+
+.ph-notes-list li {
+    position: relative;
+    counter-increment: ph-note;
+    padding-left: 24px;
+    margin-bottom: 13px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ph-notes-list li:last-child {
+    margin-bottom: 0;
+}
+
+.ph-notes-list li::before {
+    content: counter(ph-note) ".";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #FFC857;
+    font-weight: 600;
 }
 
 /* Lightbox for the full-resolution figure. */
