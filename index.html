@@ -37,7 +37,7 @@
 		<link rel="stylesheet" href="assets/css/bootsnav.css" >	
         
         <!--style.css-->
-        <link rel="stylesheet" href="assets/css/style.css?v=12">
+        <link rel="stylesheet" href="assets/css/style.css?v=13">
         
         <!--responsive.css-->
         <link rel="stylesheet" href="assets/css/responsive.css">
@@ -78,7 +78,8 @@
 			            <div class="collapse navbar-collapse menu-ui-design" id="navbar-menu">
 			                <ul class="nav navbar-nav navbar-right" data-in="fadeInDown" data-out="fadeOutUp">
 			                <li class=" smooth-menu active"></li>
-			                    <li class="smooth-menu"><a href="art.html">art gallery</a></li>
+			                    <li><a href="academic/index.html">projects</a></li>
+			                    <li><a href="art.html">art gallery</a></li>
 			                    <li class=" smooth-menu"><a href="#education">education</a></li>
 			                    <li class="smooth-menu"><a href="#publications">publications</a></li>
 
@@ -296,28 +297,29 @@
 			<div class="container">
 				<div class="projects-grid">
 					<div class="row">
-						<div class="col-md-4 col-sm-6">
+						<div class="col-md-3 col-sm-6">
 							<div class="project-card">
 								<h3>Social Determinants of Health</h3>
 								<p>Examining how social factors influence health outcomes using explainable AI and machine learning approaches.</p>
 								<div class="project-links">
-									<a href="https://doi.org/10.1093/aje/kwaf205" target="_blank" class="paper-link">Read Paper →</a>
+									<a href="https://doi.org/10.1093/aje/kwaf205" target="_blank" class="paper-link">Read Paper</a>
 								</div>
 							</div>
 						</div>
-						<div class="col-md-4 col-sm-6">
+						<div class="col-md-3 col-sm-6">
 							<div class="project-card">
 								<h3>Prediction Limits</h3>
 								<p>Exploring unknowable limits to prediction in computational social science published in Nature Computational Science.</p>
 								<div class="project-links">
-									<a href="https://doi.org/10.1038/s43588-025-00776-y" target="_blank" class="paper-link">Read Paper →</a>
+									<a href="https://doi.org/10.1038/s43588-025-00776-y" target="_blank" class="paper-link">Read Paper</a>
 								</div>
 							</div>
-
-							
 						</div>
-						<div class="col-md-4 col-sm-6">
-							<div class="project-card">
+						<div class="col-md-3 col-sm-6">
+							<div class="project-card"
+								 data-figure="assets/images/projects/robustipy_card.webp"
+								 data-figure-full="assets/images/projects/robustipy_full.webp"
+								 data-figure-alt="RobustiPy: robust inference across the analytical multiverse — specify the multiverse, fit robust models, inspect outputs">
 								<h3>RobustiPy</h3>
 								<p>Python package for multiversal analysis with model selection, averaging, and resampling capabilities.</p>
 								<div class="project-links">
@@ -326,37 +328,20 @@
 								</div>
 							</div>
 						</div>
-						<div class="col-md-4 col-sm-6">
+						<div class="col-md-3 col-sm-6">
 							<div class="project-card">
 								<h3>Digital Gender Gaps</h3>
 								<p>Mapping subnational gender gaps in internet and mobile adoption using social media advertising data.</p>
 								<div class="project-links">
 									<a href="https://digitalgendergaps.org/dashboard/" target="_blank" class="website-link">Website</a>
-										<a href="https://github.com/caseybreen/dgg_subnational" target="_blank" class="code-link">GitHub</a>
+									<a href="https://github.com/caseybreen/dgg_subnational" target="_blank" class="code-link">GitHub</a>
 									<a href="https://doi.org/10.1073/pnas.2416624122" target="_blank" class="paper-link">Paper</a>
 								</div>
 							</div>
 						</div>
-						<div class="col-md-4 col-sm-6">
-							<div class="project-card">
-								<h3>UK Biobank Analysis</h3>
-								<p>Advanced clustering and IRT approaches to model chronic disease profiles and multimorbidity trajectories.</p>
-								<div class="project-links">
-									<a href="#" class="inactive-link">Working Paper</a>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-4 col-sm-6">
-							<div class="project-card">
-								<h3>GWAS Diversity Monitor</h3>
-								<p>Monitoring diversity in genome-wide association studies and improving representation in genetic research.</p>
-								<div class="project-links">
-									<a href="https://gwasdiversitymonitor.com/" target="_blank" class="website-link">Website</a>
-								</div>
-							</div>
-							
-							
-						</div>
+					</div>
+					<div class="projects-cta">
+						<a href="academic/index.html">View all projects &rarr;</a>
 					</div>
 				</div>
 			</div>
@@ -498,6 +483,9 @@
         
         <!--Custom JS-->
         <script src="assets/js/custom.js"></script>
+
+        <!-- Project hover menu (desktop pointers only; figures load on hover) -->
+        <script src="assets/js/project-hover.js" defer></script>
 
         <!-- Idle birds: after 3s of cursor stillness, the logo flits in near the cursor
              and the standing bird perches on whichever horizontal divider is most visible. -->
