@@ -1134,7 +1134,8 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
    screen readers. The arc buttons are decorative mirrors of them. */
 /* .no-menu cards keep their label inline — there is no arc to move it to. */
 .projects-grid.hover-menu-on .project-card:not(.no-menu) .project-links,
-.projects-grid.hover-menu-on .project-takeaways {
+.projects-grid.hover-menu-on .project-takeaways,
+.projects-grid.hover-menu-on .project-bibtex {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1154,6 +1155,41 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
     font-size: 13px;
     line-height: 1.6;
     color: #7A8FA3;
+}
+
+/* Venue sits under the title as a quiet italic label, not body copy.
+   Scoped to .project-card so it beats `.project-card p`, which would otherwise
+   impose the body colour and size — and, being a flex child, would also hand
+   the label flex-grow: 1 and stretch it.
+   nowrap keeps it to a single line; project-hover.js shrinks the type where a
+   long journal name would otherwise overflow the card. */
+.project-card .project-venue {
+    flex-grow: 0;
+    margin: 6px 0 16px;
+    font-size: 12.5px;
+    font-style: italic;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #5B9BD5;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* The BibTeX record is data for the arc's Cite stem; without JS it reads as
+   a plain preformatted block at the bottom of the card. */
+.project-bibtex {
+    margin: 0 0 20px;
+    padding: 12px 14px;
+    background: #F4F7FA;
+    border: 1px solid #E1E9F1;
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #5A7086;
+    white-space: pre;
+    overflow-x: auto;
 }
 
 /* The card is the button that opens the arc, so it says so. */
@@ -1318,6 +1354,9 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
 .ph-item.website-link { background: none; color: #8FC4EA; }
 .ph-item.code-link { background: none; color: #D6E4F0; }
 .ph-item.inactive-link { background: none; color: #93A6B8; font-style: italic; }
+/* Cite is an action rather than a destination, so it reads a shade quieter. */
+.ph-item.cite-link { background: none; color: #AFC4D6; }
+.ph-item.cite-link.is-on { color: #FFC857; }
 
 #project-hover.is-open .ph-item {
     opacity: 1;
@@ -1431,6 +1470,76 @@ span.single-timeline-horizontal.spacial-horizontal-line {width: 88px;}
     top: 0;
     color: #FFC857;
     font-weight: 600;
+}
+
+/* BibTeX. Code earns a container even on the dim page — a faint dark well
+   rather than the white mount the artwork gets. */
+.ph-cite {
+    padding: 12px 14px 14px;
+    background: rgba(12, 20, 28, 0.55);
+    border: 1px solid rgba(232, 238, 245, 0.16);
+    border-radius: 8px;
+    cursor: auto;
+    user-select: text;
+}
+
+.ph-figure + .ph-cite:not([hidden]),
+.ph-notes + .ph-cite:not([hidden]) {
+    margin-top: 16px;
+}
+
+.ph-cite-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.ph-cite-title {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #FFC857;
+}
+
+.ph-cite-copy {
+    padding: 3px 10px;
+    background: rgba(232, 238, 245, 0.1);
+    border: 1px solid rgba(232, 238, 245, 0.28);
+    border-radius: 4px;
+    color: #E8EEF5;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.ph-cite-copy:hover {
+    background: rgba(232, 238, 245, 0.2);
+}
+
+.ph-cite-copy.is-done {
+    background: rgba(255, 200, 87, 0.18);
+    border-color: rgba(255, 200, 87, 0.5);
+    color: #FFC857;
+}
+
+.ph-cite-body {
+    margin: 0;
+    padding: 0;
+    max-height: 42vh;
+    overflow: auto;
+    background: none;
+    border: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: #D6E4F0;
+    /* Wrap at spaces rather than scrolling sideways: the panel is far narrower
+       than a BibTeX line, and Copy hands over the unwrapped text anyway. */
+    white-space: pre-wrap;
+    text-shadow: none;
 }
 
 /* Lightbox for the full-resolution figure. */
@@ -1666,11 +1775,6 @@ body.ph-locked {
     100% { transform: translate(-50%, -50%); }
 }
 
-/* Three frames extracted from bird_1_flapping.png + bird_1.png. All re-canvased
-   onto the same 838x739 canvas with their HEADS aligned to the same coordinate
-   (anchor at (676, 479)). This way only the wings change between frames; the
-   head and body stay put. The two flap frames alternate during flight; the
-   settled bird_1 fades in at the end as the resting pose. */
 .deco-bird {
     position: absolute;
     top: 0;
@@ -1680,21 +1784,61 @@ body.ph-locked {
     object-fit: contain;
 }
 
-/* 5 × 1.2s = 6s of flapping, then both stop and the settled frame takes over. */
-.bird-flap-up   { opacity: 0; animation: bird-flap-up   1.2s steps(1) 5; }
-.bird-flap-down { opacity: 0; animation: bird-flap-down 1.2s steps(1) 5; }
+/* One wing-beat lifted from the source video as a 12-frame strip (2832x400,
+   cells of 236x400). The video sits on pure black, which is effectively
+   premultiplied alpha, so the silhouette was keyed on luma and the colour
+   divided back out — then discarded entirely. The strip ships as an alpha
+   MASK and the fill comes from CSS, so the flying bird is exactly the same
+   colour as bird_settled.png (#C6E4FF) and the crossfade is invisible.
+   It also halves the file: 47KB rather than 89KB.
 
-@keyframes bird-flap-up {
-    0%, 49.99% { opacity: 0; }
-    50%, 100%  { opacity: 1; }
+   Steps are driven in pixels, not percentages: percentage mask-position
+   interpolates over (container - image), which does not land on frame
+   boundaries. Panning the full strip width in steps(12) gives exactly one
+   cell per step.
+
+   Rotated to sit closer to the settled bird's glide angle, which the flap's
+   wings-up rest pose is otherwise about 18 degrees steeper than. */
+.bird-flap {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 142px;
+    height: 240px;
+    /* Scaled so the strip's final pose covers the same area as the settled
+       bird (it was 1.31x by area, 1.15x linear), and offset so the two birds
+       share a centroid — otherwise the 6s crossfade visibly jumps. */
+    margin: -88px 0 0 -46px;
+    transform: rotate(18deg) scale(0.873);
+    -webkit-mask-image: url(../images/backgrounds/bird_flap_mask.webp);
+            mask-image: url(../images/backgrounds/bird_flap_mask.webp);
+    -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+    -webkit-mask-size: 1704px 240px;   /* 12 cells x 142px */
+            mask-size: 1704px 240px;
+    -webkit-mask-position: 0 0;
+            mask-position: 0 0;
+    /* 5 x 1.2s = 6s of flapping, matching the previous timing, then the
+       settled frame takes over for the final second of the approach. */
+    animation: bird-flap 1.2s steps(12) 5 forwards;
 }
 
-@keyframes bird-flap-down {
-    0%, 49.99% { opacity: 1; }
-    50%, 100%  { opacity: 0; }
+/* Painted only where the mask actually works, so an unsupported browser gets
+   nothing rather than a solid blue rectangle. */
+@supports ((mask-image: url(a.webp)) or (-webkit-mask-image: url(a.webp))) {
+    .bird-flap { background-color: #C6E4FF; }
 }
 
-/* Settled bird hands off from the flap frames at 6s, then rides the taxi to center. */
+@keyframes bird-flap {
+    to {
+        -webkit-mask-position: -1704px 0;
+                mask-position: -1704px 0;
+    }
+}
+
+/* Settled bird hands off from the flap sprite at 6s, then rides the taxi to
+   center. The strip ends on the same wings-up pose it starts on, so the two
+   images are close enough for the crossfade to hide the swap. */
 .bird-settled {
     opacity: 0;
     animation: bird-settle 0.25s ease-out 5.9s forwards;
@@ -1702,6 +1846,19 @@ body.ph-locked {
 
 @keyframes bird-settle {
     to { opacity: 1; }
+}
+
+/* Sprite retires as the settled frame arrives, so they never both show.
+   The fade finishes at 6s, exactly when the strip animation ends: its final
+   keyframe sits one cell past the last frame, so holding it would show an
+   empty cell. Gone before that can happen. */
+.bird-flap {
+    animation: bird-flap 1.2s steps(12) 5 forwards,
+               bird-flap-out 0.25s ease-out 5.75s forwards;
+}
+
+@keyframes bird-flap-out {
+    to { opacity: 0; }
 }
 
 /* keep the headline above the flying bird */
@@ -1712,10 +1869,10 @@ body.ph-locked {
 
 @media (prefers-reduced-motion: reduce) {
     .element-2,
-    .deco-bird { animation: none; }
-    .bird-flap-up,
-    .bird-flap-down { opacity: 0; }
-    .bird-settled  { opacity: 1; }
+    .deco-bird,
+    .bird-flap { animation: none; }
+    .bird-flap    { display: none; }
+    .bird-settled { opacity: 1; }
 }
 
 /* Idle bird: floats next to the cursor after the mouse has been still for 3s */
