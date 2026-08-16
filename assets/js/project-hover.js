@@ -186,12 +186,13 @@
 
         // Arc entries are the card's real links, plus a Cite stem for anything
         // that ships a BibTeX record. Cite is an action, not a destination, so
-        // it carries no link and toggles the citation panel instead.
-        // Index 0 is the shortest, lowest stem, so Cite goes first to sit at
-        // the bottom of the fan — under the links, not above them.
+        // it carries no link and toggles the citation panel instead. It is
+        // slotted in below, once the fan's direction is known.
         var bib = card.querySelector('.project-bibtex');
+        var citeEntry = bib
+            ? { label: 'Cite', cls: 'cite-link', bibtex: bib.textContent }
+            : null;
         activeItems = [];
-        if (bib) activeItems.push({ label: 'Cite', cls: 'cite-link', bibtex: bib.textContent });
         for (var q = 0; q < links.length; q++) {
             activeItems.push({ label: links[q].textContent.trim(), cls: links[q].className, index: q });
         }
@@ -209,13 +210,22 @@
         svg.setAttribute('width', vw);
         svg.setAttribute('height', vh);
 
-        var n = activeItems.length;
+        // Counted before Cite is slotted in: the position it takes changes, the
+        // total does not, and the radius the flip test needs depends on the total.
+        var n = activeItems.length + (citeEntry ? 1 : 0);
         var maxRadius = BASE_RADIUS + (n - 1) * RADIUS_STEP;
 
         // Flip to the left when the arc would run off the right edge.
         var hdir = (rect.right + maxRadius + 150 > vw - 24) ? -1 : 1;
         // Flip downward when the fan would climb out of the top of the screen.
         var vdir = (rect.top + 34 - maxRadius < 96) ? 1 : -1;
+
+        // Which end of the array is the bottom of the fan depends on that flip:
+        // fanning up, index 0 is the lowest stem; fanning down, it is the
+        // highest. Cite goes to whichever end actually renders at the bottom.
+        if (citeEntry) {
+            activeItems.splice(vdir === 1 ? activeItems.length : 0, 0, citeEntry);
+        }
 
         var ax = hdir === 1 ? rect.right - 6 : rect.left + 6;
         var ay = vdir === -1 ? rect.top + 34 : rect.bottom - 34;

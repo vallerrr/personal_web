@@ -1769,14 +1769,14 @@ body.ph-locked {
     opacity: 0.4;
     z-index: 1;
     transform: translate(-50%, -50%);
-    animation: bird-fly 7s linear forwards;
+    animation: bird-fly 4s linear forwards;
 }
 
 @keyframes bird-fly {
     0%   { transform: translate(calc(-50% - 70vw), calc(-50% + 10px)); }
     50%  { transform: translate(calc(-50% - 30vw), calc(-50% - 30px)); }
-    /* By 6s the bird is near-center and stops flapping; the last 1s it taxis in. */
-    86%  { transform: translate(calc(-50% - 8vw),  calc(-50% - 4px));  }
+    /* By 3.5s the bird is near-centre and stops flapping; it taxis the last 0.5s. */
+    87%  { transform: translate(calc(-50% - 8vw),  calc(-50% - 4px));  }
     100% { transform: translate(-50%, -50%); }
 }
 
@@ -1823,9 +1823,9 @@ body.ph-locked {
             mask-size: 1704px 240px;
     -webkit-mask-position: 0 0;
             mask-position: 0 0;
-    /* 5 x 1.2s = 6s of flapping, matching the previous timing, then the
-       settled frame takes over for the final second of the approach. */
-    animation: bird-flap 1.2s steps(12) 5 forwards;
+    /* 5 x 0.7s = 3.5s of flapping — a brisker wingbeat than the original
+       1.2s cycle — then the settled frame takes over for the short approach. */
+    animation: bird-flap 0.7s steps(12) 5 forwards;
 }
 
 /* Painted only where the mask actually works, so an unsupported browser gets
@@ -1841,12 +1841,12 @@ body.ph-locked {
     }
 }
 
-/* Settled bird hands off from the flap sprite at 6s, then rides the taxi to
+/* Settled bird hands off from the flap sprite at 3.5s, then rides the taxi to
    center. The strip ends on the same wings-up pose it starts on, so the two
    images are close enough for the crossfade to hide the swap. */
 .bird-settled {
     opacity: 0;
-    animation: bird-settle 0.25s ease-out 5.9s forwards;
+    animation: bird-settle 0.2s ease-out 3.4s forwards;
 }
 
 @keyframes bird-settle {
@@ -1854,12 +1854,12 @@ body.ph-locked {
 }
 
 /* Sprite retires as the settled frame arrives, so they never both show.
-   The fade finishes at 6s, exactly when the strip animation ends: its final
+   The fade finishes at 3.5s, exactly when the strip animation ends: its final
    keyframe sits one cell past the last frame, so holding it would show an
    empty cell. Gone before that can happen. */
 .bird-flap {
-    animation: bird-flap 1.2s steps(12) 5 forwards,
-               bird-flap-out 0.25s ease-out 5.75s forwards;
+    animation: bird-flap 0.7s steps(12) 5 forwards,
+               bird-flap-out 0.2s ease-out 3.3s forwards;
 }
 
 @keyframes bird-flap-out {
