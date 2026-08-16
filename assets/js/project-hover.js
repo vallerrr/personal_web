@@ -49,6 +49,9 @@
 
     var overlay = null, backdrop = null, stage = null, svg = null, itemsBox = null;
     var panel = null, figure = null, figImg = null, notes = null, notesList = null;
+    var cite = null, citePre = null, citeCopy = null, citeOpen = false;
+    var panelW = 0, panelX = 0, panelMidY = 0;
+    var activeItems = null;
     var lightbox = null, lightImg = null, lightPrevFocus = null;
     var activeCard = null, activeLinks = null;
     var openScrollY = 0, scrollRaf = null;
@@ -89,8 +92,22 @@
                         + '<ol class="ph-notes-list"></ol>';
         notesList = notes.querySelector('.ph-notes-list');
 
+        cite = document.createElement('div');
+        cite.className = 'ph-cite';
+        cite.innerHTML = '<div class="ph-cite-head">'
+                       + '<span class="ph-cite-title">BibTeX</span>'
+                       + '<button type="button" class="ph-cite-copy">Copy</button>'
+                       + '</div><pre class="ph-cite-body"></pre>';
+        citePre = cite.querySelector('.ph-cite-body');
+        citeCopy = cite.querySelector('.ph-cite-copy');
+        citeCopy.addEventListener('click', function (e) { e.stopPropagation(); copyCite(); });
+        // Let the reader select the entry by hand without dismissing the menu.
+        cite.addEventListener('click', function (e) { e.stopPropagation(); });
+        cite.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+
         panel.appendChild(figure);
         panel.appendChild(notes);
+        panel.appendChild(cite);
 
         // Everything anchored to the card lives in one stage, so following a
         // scroll is a single transform write rather than a geometry rebuild.
@@ -121,8 +138,11 @@
         // the link itself so target/rel/href behaviour stays in one place.
         itemsBox.addEventListener('click', function (e) {
             var item = e.target.closest ? e.target.closest('.ph-item') : null;
-            if (!item || !activeLinks) return;
-            var link = activeLinks[item.dataset.index | 0];
+            if (!item || !activeItems) return;
+            var entry = activeItems[item.dataset.index | 0];
+            if (!entry) return;
+            if (entry.bibtex !== undefined) { toggleCite(item); return; }
+            var link = activeLinks[entry.index];
             if (link) link.click();
         });
 
@@ -163,6 +183,19 @@
 
         activeCard = card;
         activeLinks = links;
+
+        // Arc entries are the card's real links, plus a Cite stem for anything
+        // that ships a BibTeX record. Cite is an action, not a destination, so
+        // it carries no link and toggles the citation panel instead.
+        // Index 0 is the shortest, lowest stem, so Cite goes first to sit at
+        // the bottom of the fan — under the links, not above them.
+        var bib = card.querySelector('.project-bibtex');
+        activeItems = [];
+        if (bib) activeItems.push({ label: 'Cite', cls: 'cite-link', bibtex: bib.textContent });
+        for (var q = 0; q < links.length; q++) {
+            activeItems.push({ label: links[q].textContent.trim(), cls: links[q].className, index: q });
+        }
+        citeOpen = false;
         card.classList.add('is-active');
 
         openScrollY = window.pageYOffset;
@@ -176,7 +209,7 @@
         svg.setAttribute('width', vw);
         svg.setAttribute('height', vh);
 
-        var n = links.length;
+        var n = activeItems.length;
         var maxRadius = BASE_RADIUS + (n - 1) * RADIUS_STEP;
 
         // Flip to the left when the arc would run off the right edge.
@@ -192,10 +225,10 @@
         var buttons = [];
         var i;
         for (i = 0; i < n; i++) {
-            var src = links[i];
+            var src = activeItems[i];
             var btn = document.createElement('span');
-            btn.className = 'ph-item ' + src.className;
-            btn.textContent = src.textContent.trim();
+            btn.className = 'ph-item ' + src.cls;
+            btn.textContent = src.label;
             btn.setAttribute('aria-hidden', 'true');
             btn.setAttribute('tabindex', '-1');
             btn.dataset.index = i;
@@ -252,7 +285,8 @@
         panel.hidden = true;
         figure.hidden = !figSrc;
         notes.hidden = !hasNotes;
-        if (figSrc || hasNotes) {
+        cite.hidden = true;
+        if (figSrc || hasNotes || bib) {
             // Prefer the far side of the arc; fall back to the other side of
             // the card when the arc has run out of room, so the figure never
             // lands on top of its own buttons.
@@ -286,17 +320,14 @@
                     figImg.setAttribute('src', figSrc);
                     figImg.alt = card.getAttribute('data-figure-alt') || '';
                 }
+                if (bib) citePre.textContent = bib.textContent.trim();
 
-                // Keep the column on screen: half its measured height either
-                // side of the card's midpoint.
-                panel.style.width = figW + 'px';
-                panel.style.left = figX + 'px';
-                panel.style.visibility = 'hidden';
-                panel.hidden = false;
-                var half = Math.min(panel.offsetHeight, vh - 120) / 2;
-                var figY = Math.max(96 + half, Math.min(vh - 24 - half, (rect.top + rect.bottom) / 2));
-                panel.style.top = figY + 'px';
-                panel.style.visibility = '';
+                panelW = figW;
+                panelX = figX;
+                panelMidY = (rect.top + rect.bottom) / 2;
+                // A card with only a citation keeps the column hidden until
+                // Cite is actually pressed.
+                if (figSrc || hasNotes) placePanel();
             }
         }
 
@@ -312,7 +343,56 @@
         activeCard.classList.remove('is-active');
         activeCard = null;
         activeLinks = null;
+        activeItems = null;
+        citeOpen = false;
+        if (cite) cite.hidden = true;
         if (overlay) overlay.classList.remove('is-open');
+    }
+
+    /* ---------- side column placement ---------- */
+
+    // Re-measured rather than cached, because toggling the citation changes the
+    // column's height and it has to stay centred on the card and on screen.
+    function placePanel() {
+        var vh = window.innerHeight;
+        panel.style.width = panelW + 'px';
+        panel.style.left = panelX + 'px';
+        panel.style.visibility = 'hidden';
+        panel.hidden = false;
+        var half = Math.min(panel.offsetHeight, vh - 120) / 2;
+        panel.style.top = Math.max(96 + half, Math.min(vh - 24 - half, panelMidY)) + 'px';
+        panel.style.visibility = '';
+    }
+
+    function toggleCite(item) {
+        citeOpen = !citeOpen;
+        cite.hidden = !citeOpen;
+        if (item) item.classList.toggle('is-on', citeOpen);
+        citeCopy.textContent = 'Copy';
+        citeCopy.classList.remove('is-done');
+        if (citeOpen || !panel.hidden) placePanel();
+        if (!citeOpen && figure.hidden && notes.hidden) panel.hidden = true;
+    }
+
+    function copyCite() {
+        var text = citePre.textContent;
+        var done = function () {
+            citeCopy.textContent = 'Copied';
+            citeCopy.classList.add('is-done');
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, function () {
+                citeCopy.textContent = 'Press ⌘C';
+            });
+        } else {
+            // Older Safari: select the block so the keyboard shortcut works.
+            var r = document.createRange();
+            r.selectNodeContents(citePre);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(r);
+            citeCopy.textContent = 'Press ⌘C';
+        }
     }
 
     /* ---------- lightbox ---------- */
@@ -354,6 +434,37 @@
 
     function cardOf(node) {
         return node && node.closest ? node.closest('.project-card') : null;
+    }
+
+    // Venue labels are nowrap, so a long journal name would spill out of the
+    // card. Shrink the type to fit instead of wrapping or truncating. Sized
+    // from one measurement rather than a shrink-until-it-fits loop, so this
+    // costs a single layout read per label; a second pass corrects for
+    // rounding and for the fact that glyph widths are not perfectly linear.
+    var VENUE_MIN = 8.5;
+
+    function fitVenues() {
+        var els = document.querySelectorAll('.project-venue');
+        if (!els.length) return;
+        var i, base;
+
+        for (i = 0; i < els.length; i++) els[i].style.fontSize = '';
+        base = parseFloat(getComputedStyle(els[0]).fontSize);
+
+        // One size for all of them, driven by the longest label. Sizing each
+        // label independently fits too, but a row of venues at four different
+        // sizes reads as an accident rather than a choice.
+        for (var pass = 0; pass < 2; pass++) {
+            var scale = 1;
+            for (i = 0; i < els.length; i++) {
+                var have = els[i].clientWidth, need = els[i].scrollWidth;
+                if (have && need > have) scale = Math.min(scale, have / need);
+            }
+            if (scale === 1) return;
+            var cur = parseFloat(els[0].style.fontSize) || base;
+            var size = Math.max(VENUE_MIN, Math.floor(cur * scale * 10) / 10);
+            for (i = 0; i < els.length; i++) els[i].style.fontSize = size + 'px';
+        }
     }
 
     // A card whose only link is a placeholder (work in progress, no paper yet)
@@ -429,9 +540,13 @@
         });
     }, { passive: true });
 
+    var fitTimer = null;
     window.addEventListener('resize', function () {
         close();
         syncEnabled();
+        // Debounced: card widths only settle once the resize stops.
+        if (fitTimer) clearTimeout(fitTimer);
+        fitTimer = setTimeout(fitVenues, 120);
     });
 
     if (hoverMQ.addEventListener) hoverMQ.addEventListener('change', syncEnabled);
@@ -439,4 +554,7 @@
 
     markStaticCards();
     syncEnabled();
+    fitVenues();
+    // Webfonts land after first paint and change the measurement.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitVenues);
 })();
