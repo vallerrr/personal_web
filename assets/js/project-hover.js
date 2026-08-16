@@ -467,6 +467,39 @@
         }
     }
 
+    // Titles wrap to different line counts, which pushes each card's venue
+    // label to a different height. Pad every title in a row up to the tallest
+    // one so the venues — and the copy under them — sit on shared baselines.
+    // Done per visual row, and by measurement rather than a fixed two-line
+    // min-height, so it survives reflow to 3/2/1 columns and any title length.
+    function alignCardHeads() {
+        var cards = document.querySelectorAll('.projects-grid .project-card');
+        if (!cards.length) return;
+        var i, h3, rows = {}, key, tops = [];
+
+        for (i = 0; i < cards.length; i++) {
+            h3 = cards[i].querySelector('h3');
+            if (h3) h3.style.minHeight = '';
+        }
+        // Cards in a row share a top, since the grid already equalises heights.
+        for (i = 0; i < cards.length; i++) {
+            h3 = cards[i].querySelector('h3');
+            if (!h3) continue;
+            key = Math.round(cards[i].getBoundingClientRect().top);
+            if (!rows[key]) { rows[key] = []; tops.push(key); }
+            rows[key].push(h3);
+        }
+        for (var t = 0; t < tops.length; t++) {
+            var group = rows[tops[t]], tallest = 0;
+            for (i = 0; i < group.length; i++) {
+                tallest = Math.max(tallest, group[i].getBoundingClientRect().height);
+            }
+            for (i = 0; i < group.length; i++) {
+                group[i].style.minHeight = Math.ceil(tallest) + 'px';
+            }
+        }
+    }
+
     // A card whose only link is a placeholder (work in progress, no paper yet)
     // has nothing to open, so it never becomes a menu and never invites a click.
     function markStaticCards() {
@@ -546,15 +579,19 @@
         syncEnabled();
         // Debounced: card widths only settle once the resize stops.
         if (fitTimer) clearTimeout(fitTimer);
-        fitTimer = setTimeout(fitVenues, 120);
+        fitTimer = setTimeout(refitCards, 120);
     });
 
     if (hoverMQ.addEventListener) hoverMQ.addEventListener('change', syncEnabled);
     else if (hoverMQ.addListener) hoverMQ.addListener(syncEnabled);
 
+    // Title alignment runs after the venue fit, because the venue's final
+    // font size feeds into the card's layout.
+    function refitCards() { fitVenues(); alignCardHeads(); }
+
     markStaticCards();
     syncEnabled();
-    fitVenues();
+    refitCards();
     // Webfonts land after first paint and change the measurement.
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitVenues);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitCards);
 })();

@@ -354,22 +354,22 @@ nav.navbar.bootsnav ul.nav > li > a[href="art.html"]:hover::after {
 .about-list-icon ul {
     display: flex;
 }
-.about-list-icon  ul li a {
-    padding-right: 22px;
-    cursor:pointer;
-    color: #fff;
-}
+/* Centre the glyph with flex rather than the old stack of compensating
+   nudges (padding-right on the circle, margin-left on the icon, then a
+   per-icon inline margin on top) — those left every glyph off-centre. */
 .about-list-icon ul li a {
     cursor: pointer;
     color: #fff;
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
     border: 2px solid #fff;
     margin-left: 14px;
     border-radius: 50%;
     width: 46px;
     height: 46px;
-    line-height: 42px;
-    text-align: center;
+    line-height: 1;
     transition: all 0.3s ease;
     font-size: 18px;
 }
@@ -380,8 +380,13 @@ nav.navbar.bootsnav ul.nav > li > a[href="art.html"]:hover::after {
 }
 
 .about-list-icon ul li a i {
-    margin-left: 6px;
+    margin: 0;
+    /* Font Awesome's glyphs are not all drawn on the same optical width, so
+       the box is centred and each glyph nudged only if it needs it. */
+    line-height: 1;
 }
+
+.about-list-icon ul li a .fa-github { font-size: 21px; }
 /*.ab-list-icon */
 
 /*.single-about-img */
