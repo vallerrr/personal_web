@@ -1889,8 +1889,10 @@ body.ph-locked {
     .bird-settled { opacity: 1; }
 }
 
-/* Idle companion: the tail-wagging dog (animated webp, 200x238 @ 15fps) appears next to the
-   cursor after the mouse has been still for 3s */
+/* Idle companion: the dog (animated webp, 200x238) appears next to the cursor after the
+   mouse has been still for 3s. The element holds two loops, swapped by src in index.html:
+   idle_dog_wag while he waits, idle_dog_stroke while the cursor rests on him. Both share
+   this canvas, so the swap never moves or resizes him. */
 .idle-bird {
     position: fixed;
     width: 100px;
