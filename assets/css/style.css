@@ -1775,8 +1775,8 @@ body.ph-locked {
 @keyframes bird-fly {
     0%   { transform: translate(calc(-50% - 70vw), calc(-50% + 10px)); }
     50%  { transform: translate(calc(-50% - 30vw), calc(-50% - 30px)); }
-    /* By 3.5s the bird is near-centre and stops flapping; it taxis the last 0.5s. */
-    87%  { transform: translate(calc(-50% - 8vw),  calc(-50% - 4px));  }
+    /* By 3.75s the bird is near-centre and stops flapping; it taxis the last 0.25s. */
+    94%  { transform: translate(calc(-50% - 8vw),  calc(-50% - 4px));  }
     100% { transform: translate(-50%, -50%); }
 }
 
@@ -1823,9 +1823,9 @@ body.ph-locked {
             mask-size: 1704px 240px;
     -webkit-mask-position: 0 0;
             mask-position: 0 0;
-    /* 5 x 0.7s = 3.5s of flapping — a brisker wingbeat than the original
-       1.2s cycle — then the settled frame takes over for the short approach. */
-    animation: bird-flap 0.7s steps(12) 5 forwards;
+    /* 6 x 0.625s = 3.75s of flapping — a brisker wingbeat than the original
+       1.2s cycle, and one more beat — so the still pose holds only the last 6%. */
+    animation: bird-flap 0.625s steps(12) 6 forwards;
 }
 
 /* Painted only where the mask actually works, so an unsupported browser gets
@@ -1841,12 +1841,21 @@ body.ph-locked {
     }
 }
 
-/* Settled bird hands off from the flap sprite at 3.5s, then rides the taxi to
+/* Settled bird hands off from the flap sprite at 3.75s, then rides the taxi to
    center. The strip ends on the same wings-up pose it starts on, so the two
    images are close enough for the crossfade to hide the swap. */
 .bird-settled {
+    /* Placed so its beak lands exactly where the flap strip's final frame
+       leaves the bird's beak: the head must not jump when one fades into
+       the other. The size is what object-fit: contain already produced --
+       its ink area (5737px2) already matches that frame's (5719px2), so
+       only the offset changed. */
+    width: 200px;
+    height: 164px;
+    left: -20px;
+    top: 42px;
     opacity: 0;
-    animation: bird-settle 0.2s ease-out 3.4s forwards;
+    animation: bird-settle 0.15s ease-out 3.7s forwards;
 }
 
 @keyframes bird-settle {
@@ -1854,12 +1863,12 @@ body.ph-locked {
 }
 
 /* Sprite retires as the settled frame arrives, so they never both show.
-   The fade finishes at 3.5s, exactly when the strip animation ends: its final
+   The fade finishes at 3.75s, exactly when the strip animation ends: its final
    keyframe sits one cell past the last frame, so holding it would show an
    empty cell. Gone before that can happen. */
 .bird-flap {
-    animation: bird-flap 0.7s steps(12) 5 forwards,
-               bird-flap-out 0.2s ease-out 3.3s forwards;
+    animation: bird-flap 0.625s steps(12) 6 forwards,
+               bird-flap-out 0.15s ease-out 3.6s forwards;
 }
 
 @keyframes bird-flap-out {
@@ -1880,7 +1889,8 @@ body.ph-locked {
     .bird-settled { opacity: 1; }
 }
 
-/* Idle bird: floats next to the cursor after the mouse has been still for 3s */
+/* Idle companion: the tail-wagging dog (animated webp, 200x238 @ 15fps) appears next to the
+   cursor after the mouse has been still for 3s */
 .idle-bird {
     position: fixed;
     width: 100px;
