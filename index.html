@@ -37,7 +37,7 @@
 		<link rel="stylesheet" href="assets/css/bootsnav.css" >	
         
         <!--style.css-->
-        <link rel="stylesheet" href="assets/css/style.css?v=30">
+        <link rel="stylesheet" href="assets/css/style.css?v=31">
         
         <!--responsive.css-->
         <link rel="stylesheet" href="assets/css/responsive.css">
@@ -536,9 +536,10 @@
         <!-- Project hover menu (desktop pointers only; figures load on hover) -->
         <script src="assets/js/project-hover.js?v=3" defer></script>
 
-        <!-- Idle companions: after 3s of cursor stillness, the tail-wagging dog trots in near
-             the cursor and the standing bird perches on whichever horizontal divider is most visible.
-             Put the cursor on the dog and he switches to the being-stroked loop until you leave. -->
+        <!-- Idle companions: after 3s of cursor stillness, the tail-wagging dog trots in at
+             the right edge and the standing bird perches on whichever horizontal divider is most
+             visible. Put the cursor on the dog and he switches to the being-stroked loop
+             until you leave. -->
         <img src="assets/images/backgrounds/idle_dog_wag.webp" alt="" id="idle-bird" class="idle-bird" aria-hidden="true">
         <img src="assets/images/backgrounds/bird_transparent_640.webp" alt="" id="perched-bird" class="perched-bird" aria-hidden="true">
         <script>
@@ -549,9 +550,8 @@
             var IDLE_MS    = 3000;   // wait this long after the cursor stops
             var REACH_MS   = 6000;   // once the dog is out, this long to get the cursor onto him
             var LINGER_MS  = 5000;   // after a stroke ends, this long for the cursor to come back
-            var MIN_DIST   = 80;     // bird sits at least this far from cursor
-            var MAX_DIST   = 180;    // ...and at most this far
-            var EDGE_PAD   = 70;     // keep the bird this far from viewport edges
+            var RIGHT_INSET = 70;    // dog's centre sits this far in from the right edge
+            var EDGE_PAD   = 70;     // keep him this far from the top and bottom
             var WAG_SRC    = 'assets/images/backgrounds/idle_dog_wag.webp';
             var STROKE_SRC = 'assets/images/backgrounds/idle_dog_stroke.webp';
             var timer = null;        // the 3s cursor-stillness timer
@@ -610,14 +610,11 @@
                 // Already out: re-seat the bird, but let the dog stand where he is
                 // rather than teleporting him to the cursor every time it goes still.
                 if (bird.classList.contains('visible')) { placePerched(); return; }
-                // Pick a random angle + distance so each appearance is in a fresh spot.
-                var angle = Math.random() * Math.PI * 2;
-                var dist  = MIN_DIST + Math.random() * (MAX_DIST - MIN_DIST);
-                var x = lastX + Math.cos(angle) * dist;
-                var y = lastY + Math.sin(angle) * dist;
-                // Keep the bird inside the viewport.
-                x = Math.max(EDGE_PAD, Math.min(window.innerWidth  - EDGE_PAD, x));
-                y = Math.max(EDGE_PAD, Math.min(window.innerHeight - EDGE_PAD, y));
+                // He always turns up along the right edge; only the height varies,
+                // so he never lands on top of the column of text.
+                var x = window.innerWidth - RIGHT_INSET;
+                var span = Math.max(0, window.innerHeight - EDGE_PAD * 2);
+                var y = EDGE_PAD + Math.random() * span;
                 bird.style.left = x + 'px';
                 bird.style.top  = y + 'px';
                 bird.classList.add('visible');
