@@ -79,7 +79,6 @@
 			                <ul class="nav navbar-nav navbar-right" data-in="fadeInDown" data-out="fadeOutUp">
 			                <li class=" smooth-menu active"></li>
 			                    <li><a href="academic/index.html">projects</a></li>
-			                    <li class=" smooth-menu"><a href="#education">education</a></li>
 			                    <li class="smooth-menu"><a href="#publications">publications</a></li>
 			                    <li class="nav-cv"><a href="assets/download/Jiani_Yan_CV.pdf" download>download cv</a></li>
 
@@ -130,7 +129,7 @@
 									Computational social scientist dedicated to understanding health inequalities with advanced AI algorithms.
 								</h3>
 								<p>
-									I specialise in the study of health disparities leveraging machine learning, deep learning, and explainable AI. My research focuses on social determinants of health and their influence on mortality and morbidity outcomes. Currently a DPhil student at Oxford, supervised by Prof. Charles Rahal and Prof. Ridhi Kashyap.
+									I specialise in the study of health disparities leveraging machine learning, deep learning, and explainable AI. My research focuses on social determinants of health and their influence on mortality and morbidity outcomes. I am currently a Researcher in Data Science and Informatics at the Nuffield Department of Population Health, University of Oxford, and a Non-Stipendiary Research Fellow at Nuffield College, Oxford. Prior to my postdoctoral position, I was an MPhil student in Sociology &amp; Demography and then a DPhil student in Computational Social Science at Oxford, supervised by Prof. Charles Rahal and Prof. Ridhi Kashyap.
 								</p>
 								<p><strong>Research Interests:</strong> Explainable AI · Health Inequalities · Social Determinants · Computational Demography · Model Evaluation</p>
 								<div class="row">
@@ -143,7 +142,7 @@
 									<div class="col-sm-4">
 										<div class="single-about-add-info">
 											<h3>email </h3>
-											<p>jiani.yan@wolfson.ox.ac.uk</p>
+											<p>jiani.yan@demography.ox.ac.uk</p>
 										</div>
 									</div>
 
@@ -182,110 +181,6 @@
 		</section><!--/.about-->
 		<!--about end -->
 		
-		<!--education start -->
-		<section id="education" class="education">
-			<div class="section-heading text-center">
-				<h2>education</h2>
-			</div>
-			<div class="container">
-				<div class="education-horizontal-timeline">
-					<div class="row">
-						<div class="col-sm-3">
-							<div class="single-horizontal-timeline">
-								<div class="experience-time">
-									<h2>2014 - 2018</h2>
-									<h3>BSc <br> Computer Science</h3>
-								</div><!--/.experience-time-->
-								<div class="timeline-horizontal-border">
-									<i class="fa fa-circle" aria-hidden="true"></i>
-									<span class="single-timeline-horizontal"></span>
-								</div>
-								<div class="timeline">
-									<div class="timeline-content">
-										<h4 class="title">
-											Southwestern University of Finance Economics
-										</h4>
-										<h5>Chengdu, China</h5>
-
-									</div><!--/.timeline-content-->
-								</div><!--/.timeline-->
-							</div>
-						</div>
-						<div class="col-sm-3">
-							<div class="single-horizontal-timeline">
-								<div class="experience-time">
-									<h2>2018 - 2019</h2>
-									<h3>MSc <br>  Financial Economics</h3>
-								</div><!--/.experience-time-->
-								<div class="timeline-horizontal-border">
-									<i class="fa fa-circle" aria-hidden="true"></i>
-									<span class="single-timeline-horizontal"></span>
-								</div>
-								<div class="timeline">
-									<div class="timeline-content">
-										<h4 class="title">
-											University of Birmingham
-										</h4>
-										<h5>Birmingham, United Kingdom</h5>
-
-									</div><!--/.timeline-content-->
-								</div><!--/.timeline-->
-							</div>
-						</div>
-						<div class="col-sm-3">
-							<div class="single-horizontal-timeline">
-								<div class="experience-time">
-									<h2>2020 - 2022</h2>
-									<h3>MPhil <br> Sociology & Demography</h3>
-								</div><!--/.experience-time-->
-								<div class="timeline-horizontal-border">
-									<i class="fa fa-circle" aria-hidden="true"></i>
-									<span class="single-timeline-horizontal"></span>
-								</div>
-								<div class="timeline">
-									<div class="timeline-content">
-										<h4 class="title">
-											University of Oxford
-										</h4>
-										<h5>Oxford, United Kingdom</h5>
-										<!--p class="description">
-											Duis aute irure dolor in reprehenderit in vol patate velit esse cillum dolore eu fugiat nulla pari. Excepteur sint occana inna tecat cupidatat non proident. 
-										</p -->
-									</div><!--/.timeline-content-->
-								</div><!--/.timeline-->
-							</div>
-						</div>
-						<div class="col-sm-3">
-							<div class="single-horizontal-timeline">
-								<div class="experience-time">
-									<h2>2022 - Now</h2>
-									<h3>DPhil <br> Computational Social Science</h3>
-								</div><!--/.experience-time-->
-								<div class="timeline-horizontal-border">
-									<i class="fa fa-circle" aria-hidden="true"></i>
-									<span class="single-timeline-horizontal spacial-horizontal-line
-									"></span>
-								</div>
-								<div class="timeline">
-									<div class="timeline-content">
-										<h4 class="title">
-											university of oxford
-										</h4>
-										<h5>oxford, united kingdom</h5>
-										<!--class="description">
-											Duis aute irure dolor in reprehenderit in vol patate velit esse cillum dolore eu fugiat nulla pari. Excepteur sint occana inna tecat cupidatat non proident.
-										</p-->
-									</div><!--/.timeline-content-->
-								</div><!--/.timeline-->
-							</div>
-						</div>
-
-					</div>
-				</div>
-			</div>
-
-		</section><!--/.education-->
-		<!--education end -->
 
 		<!--projects start -->
 		<section id="projects" class="projects">
@@ -560,9 +455,9 @@
             var stroking = false;
             var lastX = 0, lastY = 0;
 
-            // Perches: section-heading underlines + the timeline lines in education.
+            // Perches: section-heading underlines.
             var perches = perched
-                ? document.querySelectorAll('.section-heading h2, .single-timeline-horizontal')
+                ? document.querySelectorAll('.section-heading h2')
                 : [];
 
             function pickPerch() {
@@ -592,8 +487,8 @@
                     lastPerch = target;
                 }
                 var r = target.getBoundingClientRect();
-                // Anchor to the divider line itself: section-heading underline sits at the
-                // element's bottom; the timeline span is a thin line so top == bottom.
+                // Anchor to the divider line itself: the section-heading underline sits at
+                // the element's bottom.
                 var pageBottom = r.bottom + window.pageYOffset;
                 var pageLeft   = r.left   + window.pageXOffset;
                 var birdH = perched.offsetHeight || 200;
